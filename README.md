@@ -21,7 +21,7 @@ This module also supports inheritance, i.e. allowing a template for child pages 
 
 To enable this functionality, go to Modules -> Configure -> ProcessTemplateParents, check the box for inheritance and save.
 
-Note that a permission once granted on a parent can't be revoked further down.
+Note that a permission once granted for a parent can't be revoked further down.
 
 ## License
 
