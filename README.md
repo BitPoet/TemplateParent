@@ -5,6 +5,10 @@ ProcessWire module that allows limiting templates for new pages based on the par
 
 Beta - Proof-of-Concept, use at your own risk (though this shouldn't be too high as the module saves all settings in its own database table)
 
+## Compatibility
+
+Tested with ProcessWire 2.7 and 3.x, though it should also work on older versions. If it works for you on 2.5 or 2.6, please let me know.
+
 ## Usage
 
 - Download ZIP file and extract it under site/modules in your ProcessWire installation
