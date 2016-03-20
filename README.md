@@ -1,2 +1,20 @@
 # TemplateParent
 ProcessWire module that allows limiting templates for new pages based on the parent page
+
+## Status
+
+Beta - Proof-of-Concept, use at your own risk (though this shouldn't be too high as the module saves all settings in its own database table)
+
+## Usage
+
+- Download ZIP file and extract it under site/modules in your ProcessWire installation
+- In PW's backend, click on Modules -> Refresh
+- Install TemplateParent (ProcessTemplateParent will be installed alongside)
+- You'll find a new menu entry "Template Parents" under "Setup"
+- On this page, assign possible parent pages to your templates
+ 
+Restrictions entered here will be applied after the regular regular restrictions in the template's family settings are applied, which means you can't make an already excluded template visible in the drop-down list for new page through this method, only disallow otherwise allowed templates.
+
+## License
+
+Released under Mozilla Public License v2. See file LICENSE for details.
