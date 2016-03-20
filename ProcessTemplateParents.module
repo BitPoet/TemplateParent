@@ -17,7 +17,7 @@ class ProcessTemplateParents extends Process implements Module, ConfigurableModu
 		return array(
 			"title"			=>	"Template Parents Process",
 			"summary"		=>	"Manage available templates for new pages based on parents. This module gets installed automatically by TemplateParents.",
-			"version"		=>	"0.0.5",
+			"version"		=>	"0.0.6",
 			"icon"			=>	"child",
 		);
 	}
