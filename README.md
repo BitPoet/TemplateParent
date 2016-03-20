@@ -15,6 +15,14 @@ Beta - Proof-of-Concept, use at your own risk (though this shouldn't be too high
  
 Restrictions entered here will be applied after the regular regular restrictions in the template's family settings are applied, which means you can't make an already excluded template visible in the drop-down list for new page through this method, only disallow otherwise allowed templates.
 
+## Advanced
+
+This module also supports inheritance, i.e. allowing a template for child pages if the template has been allowed for one of the parent's ancestors.
+
+To enable this functionality, go to Modules -> Configure -> ProcessTemplateParents, check the box for inheritance and save.
+
+Note that a permission once granted on a parent can't be revoked further down.
+
 ## License
 
 Released under Mozilla Public License v2. See file LICENSE for details.
