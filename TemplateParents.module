@@ -15,8 +15,8 @@ class TemplateParents extends WireData implements Module {
 	public static function getModuleInfo() {
 		return array(
 			"title"			=>	"Template Parents",
-			"summary"		=>	"Module for parent-based template management, also installs by TemplateParents",
-			"version"		=>	"0.0.4",
+			"summary"		=>	"Module for parent-based template permissions for new pages.",
+			"version"		=>	"0.0.5",
 			"installs"		=>	array("ProcessTemplateParents"),
 			"autoload"		=>	true,
 		);
