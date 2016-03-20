@@ -1,0 +1,221 @@
+<?php
+
+/**
+ * ProcessWire module that lets you limit the list of available templates for new pages
+ * based on the parent page(s).
+ *
+ * Only works in conjunction with TemplateParents.
+ * Adds a "Template Parents" menu entry under "Setup" in ProcessWire's backend.
+ *
+ * (c) 2016 BitPoet
+ * Licensed under MPLv2
+ *
+ */
+
+class ProcessTemplateParents extends Process implements Module {
+	public static function getModuleInfo() {
+		return array(
+			"title"			=>	"Template Parents Process",
+			"summary"		=>	"Manage available templates for new pages based on parents",
+			"version"		=>	"0.0.3",
+			"icon"			=>	"child",
+		);
+	}
+	
+	protected $table = "template_parents";
+	
+	public function ___execute() {
+		return $this->buildForm();
+	}
+	
+	public function ___buildForm() {
+		if($this->input->post->submitTemplateParents) {
+			$count = 0;
+			foreach($this->input->post as $k => $v) {
+				if(strpos($k, "allowedParents_") === 0) {
+					list($unused, $id) = explode('_', $k);
+					$id = (int) $id;
+					$templates = $this->templates->find("id=$id");
+					if($templates->count() > 0) {
+						$template = $templates->first();
+						if(is_array($v)) {
+							$v = array_map(function($val) { return trim($val); }, explode(',', $v[0]));
+						}
+						$data = wireEncodeJSON($v);
+						$this->saveTemplateParents($template->id, $data);
+						$count++;
+					}
+				}
+			}
+			$this->message(sprintf($this->_("Saved settings for %d templates"), $count));
+		}
+		
+		$form = $this->modules->get('InputfieldForm');
+		$form->attr('id', 'TemplateParentsForm');
+		$form->attr('action', $this->page->url);
+		$form->attr('method', "POST");
+		
+		$field = $this->modules->get("InputfieldMarkup");
+		$field->attr('id', 'TemplateParentsFormDescription');
+		$field->attr('value', $this->_("Define under which parents new pages of a certain template can be created. This restrictions apply <em>after</em> any restrictions in the template's family settings!"));
+		$form->append($field);
+		
+		foreach($this->templates as $tpl) {
+			$form->append($this->buildFormTemplatePages($tpl));
+		}
+		
+		$button = $this->modules->get('InputfieldSubmit');
+		$button->attr('value', $this->_("Save"));
+		$button->attr('id+name', 'submitTemplateParents');
+		$button->addClass('head_button_clone');
+		$form->append($button);
+		
+		return $form->render();
+	}
+	
+	public function ___buildFormTemplatePages($tpl) {
+		$parents = $this->getTemplateParents($tpl);
+		
+		$field = $this->modules->get('InputfieldPageListSelectMultiple');
+		$field->label = sprintf($this->_("Allowed Parent Pages for Template '%s'"), $tpl->label ? $tpl->label : $tpl->name);
+		$field->collapsed = (count($parents) > 0) ? Inputfield::collapsedNo : Inputfield::collapsedYes;
+		$field->description = $this->_("Add all pages here under which you want to allow pages with this template to be created");
+		$field->attr('id+name', 'allowedParents_' . $tpl->id);
+		$field->parent_id = 0;
+		$field->attr('value', $parents);
+		
+		return $field;
+	}
+	
+	public function getTemplateParents($template) {
+		$database = $this->wire('database');
+		
+		$query = new DatabaseQuerySelect();
+		$query->select('data');
+		$query->from($this->table);
+		$query->where("`templates_id` = :id");
+		$query->bindValue(":id", $template->id);
+		
+		$stmt = $query->execute();
+		
+		if($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+			if(strlen($row["data"]) > 0) {
+				$data = wireDecodeJSON($row["data"]);
+				if(is_array($data) && count($data) > 0) {
+					return $data;
+				}
+			}
+		}
+		
+		return array();
+	}
+	
+	public function saveTemplateParents($templateid, $parents) {
+		$database = $this->wire('database');
+		$sql = "REPLACE INTO `{$this->table}` (`templates_id`, `data`) VALUES (:tpl, :data)";
+		$query = $database->prepare($sql);
+		$query->bindParam(":tpl", $templateid, PDO::PARAM_INT);
+		$query->bindParam(":data", $parents, PDO::PARAM_STR);
+		$query->execute();
+	}
+	
+	public function deleteTemplateAssignment($templateid) {
+		$database = $this->wire('database');
+		$sql = "DELETE FROM `{$this->table}` WHERE templates_id = :id";
+		$query = $database->prepare($sql);
+		$query->bindParam(":id", $templateid, PDO::PARAM_INT);
+		$query->execute();
+	}
+	
+	public function install() {
+		$database = $this->wire('database');
+		$sql = $this->getCreateStatement();
+
+		$query = $database->prepare($sql);
+		$result = $query->execute();
+
+		if(!$result) $this->error("Error creating table '{$table}'");
+
+		$this->addTemplateParentsAdmin();
+	}
+	
+	public function uninstall() {
+		$database = $this->wire('database');
+		$sql = $this->getDropStatement();
+
+		$query = $database->prepare($sql);
+		$result = $query->execute();
+
+		if(!$result) $this->error("Error removing table '{$table}'");
+		
+		$this->removeTemplateParentsAdmin();
+	}
+	
+	public function getDatabaseSchema() {
+		$engine = $this->config->dbEngine;
+		$charset = $this->config->dbCharset;
+		
+		$schema = array(
+			'templates_id' => 'int UNSIGNED NOT NULL', 
+			'data' => "MEDIUMTEXT",
+			'keys' => array(
+				'primary' => 'PRIMARY KEY (`templates_id`)'
+			),
+			'xtra' => array(
+				'append' => "ENGINE=$engine DEFAULT CHARSET=$charset",
+			)
+		);
+		
+		return $schema;
+	}
+
+	public function getCreateStatement() {
+		$schema = $this->getDatabaseSchema();
+		
+		$sql = 	"CREATE TABLE `{$this->table}` (";
+		foreach($schema as $f => $v) {
+			if($f == 'keys' || $f == 'xtra') continue; 
+			$sql .= "`$f` $v, "; 
+		}
+		foreach($schema['keys'] as $v) {
+			$sql .= "$v, ";
+		}
+		
+		$xtra = isset($schema['xtra']) ? $schema['xtra'] : array();
+		if(is_string($xtra)) $xtra = array('append' => $xtra); // backwards compat: xtra used to be a string, what 'append' is now. 
+		$append = isset($xtra['append']) ? $xtra['append'] : '';
+
+		$sql = rtrim($sql, ", ") . ') ' . $append;
+
+		return $sql;
+	}
+	
+	public function getDropStatement() {
+		return "DROP TABLE `{$this->table}`";
+	}
+	
+	public function addTemplateParentsAdmin() {
+		$admin = $this->pages->get($this->config->adminRootPageID);
+		$setup = $admin->child('name=setup');
+		$pg = $setup->child('name=templateparents');
+		if($pg instanceof NullPage) {
+			$pg = new Page();
+			$pg->template = 'admin';
+			$pg->name = 'templateparents';
+			$pg->parent = $setup;
+			$pg->title = 'Template Parents';
+			$pg->process = $this->className();
+			$pg->save();
+		}
+	}
+	
+	public function removeTemplateParentsAdmin() {
+		$admin = $this->pages->get($this->config->adminRootPageID);
+		$setup = $admin->child('name=setup');
+		$pg = $setup->child('name=templateparents');
+		if(! $pg instanceof NullPage) {
+			$pg->delete();
+		}
+	}
+
+}

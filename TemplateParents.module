@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * ProcessWire module that lets you limit the list of available templates for new pages
+ * based on the parent page(s).
+ *
+ * Only works in conjunction with ProcessTemplateParents.
+ *
+ * (c) 2016 BitPoet
+ * Licensed under MPLv2
+ *
+ */
+
+class TemplateParents extends WireData implements Module {
+	public static function getModuleInfo() {
+		return array(
+			"title"			=>	"Template Parents",
+			"summary"		=>	"Module for parent-based template management, also installs by TemplateParents",
+			"version"		=>	"0.0.3",
+			"installs"		=>	array("ProcessTemplateParents"),
+			"autoload"		=>	true,
+		);
+	}
+	
+	public function init() {
+		$this->addHookAfter("Templates::deleted", $this, "templateDeleted");
+		$this->addHookAfter("ProcessPageAdd::getAllowedTemplates", $this, "filterAllowedParents");
+	}
+	
+	public function templateDeleted($event) {
+		$process = $this->modules->get("ProcessTemplateParents");
+		$template = $event->arguments(0);
+		$process->deleteTemplateAssignment($template->id);
+	}
+
+	public function filterAllowedParents($event) {
+		$process = $this->modules->get("ProcessTemplateParents");
+
+		$parent = $event->arguments(0);
+		if(! $parent) {
+			$parent = wire('pages')->get((int)$this->input->get->parent_id);
+		}
+		if($parent instanceof NullPage) return;
+		
+		$templates = $event->return;
+		$out = array();
+		foreach($templates as $template) {
+			$allowed = $process->getTemplateParents($template);
+			if(count($allowed) == 0 || in_array($parent->id, $allowed)) $out[] = $template;
+		}
+		$event->return = $out;
+	}
+}
