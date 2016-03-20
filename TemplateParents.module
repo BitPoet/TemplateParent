@@ -16,7 +16,7 @@ class TemplateParents extends WireData implements Module {
 		return array(
 			"title"			=>	"Template Parents",
 			"summary"		=>	"Module for parent-based template management, also installs by TemplateParents",
-			"version"		=>	"0.0.3",
+			"version"		=>	"0.0.4",
 			"installs"		=>	array("ProcessTemplateParents"),
 			"autoload"		=>	true,
 		);
@@ -40,13 +40,28 @@ class TemplateParents extends WireData implements Module {
 		if(! $parent) {
 			$parent = wire('pages')->get((int)$this->input->get->parent_id);
 		}
+		if(! $parent) {
+			$parent = wire('pages')->get((int)$this->input->post->parent_id);
+		}
 		if($parent instanceof NullPage) return;
 		
 		$templates = $event->return;
 		$out = array();
 		foreach($templates as $template) {
 			$allowed = $process->getTemplateParents($template);
-			if(count($allowed) == 0 || in_array($parent->id, $allowed)) $out[] = $template;
+			if(count($allowed) == 0) {
+				$out[$template->id] = $template;
+			} else if(in_array($parent->id, $allowed)) {
+				$out[$template->id] = $template;
+			} else if($process->inheritSettings == 1) {
+				foreach($allowed as $allowedId) {
+					$allowedPage = $this->pages->get($allowedId);
+					if($parent->parents->has($allowedPage)) {
+						$out[$template->id] = $template;
+						break 1;
+					}
+				}
+			}
 		}
 		$event->return = $out;
 	}

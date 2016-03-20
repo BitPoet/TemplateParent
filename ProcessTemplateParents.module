@@ -12,17 +12,21 @@
  *
  */
 
-class ProcessTemplateParents extends Process implements Module {
+class ProcessTemplateParents extends Process implements Module, ConfigurableModule {
 	public static function getModuleInfo() {
 		return array(
 			"title"			=>	"Template Parents Process",
 			"summary"		=>	"Manage available templates for new pages based on parents",
-			"version"		=>	"0.0.3",
+			"version"		=>	"0.0.4",
 			"icon"			=>	"child",
 		);
 	}
 	
 	protected $table = "template_parents";
+	
+	public function __construct() {
+		$this->inheritSettings = 0;
+	}
 	
 	public function ___execute() {
 		return $this->buildForm();
@@ -216,6 +220,20 @@ class ProcessTemplateParents extends Process implements Module {
 		if(! $pg instanceof NullPage) {
 			$pg->delete();
 		}
+	}
+	
+	public function getModuleConfigInputfields($data) {
+		$inputfields = new InputfieldWrapper();
+		
+		$field = $this->modules->get("InputfieldCheckbox");
+		$field->attr('id+name', 'inheritSettings');
+		$field->label = $this->_("Inheritable Setting");
+		$field->description = $this->_("If checked, a template will also be allowed under a page if it has been allowed for one of the pages ancestors.");
+		if($data["inheritSettings"] == 1)
+			$field->attr('checked', 'checked');
+		$inputfields->append($field);
+		
+		return $inputfields;
 	}
 
 }
