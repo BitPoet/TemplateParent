@@ -16,7 +16,7 @@ class TemplateParents extends WireData implements Module {
 		return array(
 			"title"			=>	"Template Parents",
 			"summary"		=>	"Module for parent-based template management.",
-			"version"		=>	"0.0.6",
+			"version"		=>	"0.0.7",
 			"installs"		=>	array("ProcessTemplateParents"),
 			"autoload"		=>	true,
 		);

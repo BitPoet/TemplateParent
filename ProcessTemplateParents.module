@@ -17,7 +17,7 @@ class ProcessTemplateParents extends Process implements Module, ConfigurableModu
 		return array(
 			"title"			=>	"Template Parents Process",
 			"summary"		=>	"Manage available templates for new pages based on parents. This module gets installed automatically by TemplateParents.",
-			"version"		=>	"0.0.6",
+			"version"		=>	"0.0.7",
 			"icon"			=>	"child",
 		);
 	}
@@ -228,8 +228,8 @@ class ProcessTemplateParents extends Process implements Module, ConfigurableModu
 		$field = $this->modules->get("InputfieldCheckbox");
 		$field->attr('id+name', 'inheritSettings');
 		$field->label = $this->_("Inheritable Setting");
-		$field->description = $this->_("If checked, a template will also be allowed under a page if it has been allowed for one of the pages ancestors.");
-		if($data["inheritSettings"] == 1)
+		$field->description = $this->_("If checked, a template will also be allowed under a page if it has been allowed for one of the pages' ancestors.");
+		if(isset($data["inheritSettings"]) && $data["inheritSettings"] == 1)
 			$field->attr('checked', 'checked');
 		$inputfields->append($field);
 		
