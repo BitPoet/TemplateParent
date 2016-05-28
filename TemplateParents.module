@@ -27,7 +27,7 @@ class TemplateParents extends WireData implements Module {
 		$this->addHookAfter("ProcessPageAdd::getAllowedTemplates", $this, "filterAllowedParents");
 		// Hooks for editing directly on the template:
 		$this->addHookAfter("ProcessTemplate::buildEditForm", $this, "appendFieldToForm");
-		$this->addHookBefore("ProcessTemplate::saveTemplate", $this, "saveCustomFields");
+		$this->addHookBefore("ProcessTemplate::executeSave", $this, "saveCustomFields");
 	}
 	
 	public function templateDeleted($event) {
@@ -71,8 +71,7 @@ class TemplateParents extends WireData implements Module {
 
 	public function appendFieldToForm($event) {
 		$process = $this->modules->get("ProcessTemplateParents");
-		
-		$proctpl = $event->object;
+
 		$frm = $event->return;
 		$tpl = $event->arguments(0);
 		
@@ -90,9 +89,8 @@ class TemplateParents extends WireData implements Module {
 		$familyWrap->insertAfter($field, $familyWrap->get('parentTemplates'));
 	}
 
-	public function saveCustomFields($event) {
-		$form = $event->arguments(0);
-		$tpl  = $event->arguments(1);
+	public function saveCustomFields() {
+		$tpl = $this->templates->get($this->input->post->id);
 		
 		$a = array();
 		if(is_array($this->input->post->allowedParents)) { // foreach($this->input->post->allowedParents as $id) $a[] = (int) $id;
